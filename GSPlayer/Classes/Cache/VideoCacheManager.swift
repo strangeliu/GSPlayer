@@ -8,7 +8,7 @@
 
 import Foundation
 
-private let directory = NSTemporaryDirectory().appendingPathComponent("GSPlayer")
+private let directory = NSTemporaryDirectory().appendingPathComponent("VideoCache")
 
 public enum VideoCacheManager {
     
