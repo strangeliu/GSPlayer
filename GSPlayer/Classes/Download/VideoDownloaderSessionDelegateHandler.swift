@@ -34,30 +34,33 @@ class VideoDownloaderSessionDelegateHandler: NSObject {
 extension VideoDownloaderSessionDelegateHandler: URLSessionDataDelegate {
     
     func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
-        delegate?.urlSession(session, didReceive: challenge, completionHandler: completionHandler)
+        VideoLoadManager.dispatchQueue.async {
+            self.delegate?.urlSession(session, didReceive: challenge, completionHandler: completionHandler)
+        }
     }
     
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
-        delegate?.urlSession(session, dataTask: dataTask, didReceive: response, completionHandler: completionHandler)
+        VideoLoadManager.dispatchQueue.async {
+            self.delegate?.urlSession(session, dataTask: dataTask, didReceive: response, completionHandler: completionHandler)
+        }
     }
     
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-        buffer.append(data)
-        
-        guard buffer.count > bufferSize else { return }
-        
-        callbackBuffer(session: session, dataTask: dataTask)
+        VideoLoadManager.dispatchQueue.async {
+            self.buffer.append(data)
+            guard self.buffer.count > bufferSize else { return }
+            self.callbackBuffer(session: session, dataTask: dataTask)
+        }
     }
     
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        
-        if buffer.count > 0 && error == nil {
-            callbackBuffer(session: session, dataTask: task as! URLSessionDataTask)
+        VideoLoadManager.dispatchQueue.async {
+            if self.buffer.count > 0 && error == nil {
+                self.callbackBuffer(session: session, dataTask: task as! URLSessionDataTask)
+            }
+            self.delegate?.urlSession(session, task: task, didCompleteWithError: error)
         }
-        
-        delegate?.urlSession(session, task: task, didCompleteWithError: error)
     }
-    
 }
 
 private extension VideoDownloaderSessionDelegateHandler {

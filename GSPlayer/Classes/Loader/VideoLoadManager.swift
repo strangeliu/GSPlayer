@@ -10,6 +10,8 @@ import AVFoundation
 
 public class VideoLoadManager: NSObject {
     
+    public static let dispatchQueue = DispatchQueue(label: "video.resourceLoader.queue")
+    
     public static let shared = VideoLoadManager()
     
     public var reportError: ((Error) -> Void)?

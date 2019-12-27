@@ -32,8 +32,10 @@ protocol VideoDownloaderHandlerDelegate: class {
 
 class VideoDownloaderHandler {
     
-    weak var delegate: VideoDownloaderHandlerDelegate?
+    static let operationQueue = OperationQueue()
     
+    weak var delegate: VideoDownloaderHandlerDelegate?
+        
     private let url: URL
     private var actions: [VideoCacheAction]
     private let cacheHandler: VideoCacheHandler
@@ -139,13 +141,13 @@ private extension VideoDownloaderHandler {
             return
         }
         
-        sessionDelegate = VideoDownloaderSessionDelegateHandler(delegate: self)
-        
+        let sessionDelegate = VideoDownloaderSessionDelegateHandler(delegate: self)
         session = URLSession(
             configuration: .ephemeral,
-            delegate: VideoDownloaderSessionDelegateHandler(delegate: self),
-            delegateQueue: .main
+            delegate: sessionDelegate,
+            delegateQueue: VideoDownloaderHandler.operationQueue
         )
+        self.sessionDelegate = sessionDelegate
         
         var urlRequest = URLRequest(
             url: url,
