@@ -52,16 +52,27 @@ public class VideoPreloadManager: NSObject {
         didPause?()
     }
     
+    public func add(url: URL) {
+        guard downloader?.url != url && !waitingQueue.contains(url) else { return }
+        waitingQueue.append(url)
+    }
+    
+    public func removeURLIfNotStart(url: URL) {
+        if downloader?.url != url {
+            if let index = waitingQueue.firstIndex(of: url) {
+                waitingQueue.remove(at: index)
+            }
+        }
+    }
+    
     func remove(url: URL) {
         if let index = waitingQueue.firstIndex(of: url) {
             waitingQueue.remove(at: index)
         }
-        
         if downloader?.url == url {
             downloader = nil
         }
     }
-    
 }
 
 extension VideoPreloadManager: VideoDownloaderDelegate {
@@ -79,5 +90,4 @@ extension VideoPreloadManager: VideoDownloaderDelegate {
         start()
         didFinish?(error)
     }
-    
 }
