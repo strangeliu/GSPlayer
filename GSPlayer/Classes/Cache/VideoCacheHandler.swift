@@ -41,8 +41,13 @@ public class VideoCacheHandler {
     }
     
     deinit {
-        readFileHandle.closeFile()
-        writeFileHandle.closeFile()
+        if #available(iOS 13.0, *) {
+            try? readFileHandle.close()
+            try? writeFileHandle.close()
+        } else {
+            readFileHandle.closeFile()
+            writeFileHandle.closeFile()
+        }
     }
     
     func actions(for range: NSRange) -> [VideoCacheAction] {
@@ -122,16 +127,36 @@ public class VideoCacheHandler {
     
     func cache(data: Data, for range: NSRange) {
         objc_sync_enter(writeFileHandle)
-        writeFileHandle.seek(toFileOffset: UInt64(range.location))
-        writeFileHandle.write(data)
+        
+        if #available(iOS 13.0, *) {
+            do {
+                try writeFileHandle.seek(toOffset: UInt64(range.location))
+                try writeFileHandle.__write(data, error: ())
+            } catch {
+                
+            }
+        } else {
+            writeFileHandle.seek(toFileOffset: UInt64(range.location))
+            writeFileHandle.write(data)
+        }
         configuration.add(fragment: range)
         objc_sync_exit(writeFileHandle)
     }
     
     func cachedData(for range: NSRange) -> Data {
         objc_sync_enter(readFileHandle)
-        readFileHandle.seek(toFileOffset: UInt64(range.location))
-        let data = self.readFileHandle.readData(ofLength: range.length)
+        let data: Data
+        if #available(iOS 13.0, *) {
+            do {
+                try readFileHandle.seek(toOffset: UInt64(range.location))
+                data = try readFileHandle.__readDataUp(toLength: range.length)
+            } catch {
+                data = Data()
+            }
+        } else {
+            readFileHandle.seek(toFileOffset: UInt64(range.location))
+            data = self.readFileHandle.readData(ofLength: range.length)
+        }
         objc_sync_exit(readFileHandle)
         return data
     }
@@ -139,14 +164,27 @@ public class VideoCacheHandler {
     func set(info: VideoInfo) {
         objc_sync_enter(writeFileHandle)
         configuration.info = info
-        writeFileHandle.truncateFile(atOffset: UInt64(info.contentLength))
-        writeFileHandle.synchronizeFile()
+        if #available(iOS 13.0, *) {
+            do {
+                try writeFileHandle.truncate(atOffset: UInt64(info.contentLength))
+                try writeFileHandle.synchronize()
+            } catch {
+                
+            }
+        } else {
+            writeFileHandle.truncateFile(atOffset: UInt64(info.contentLength))
+            writeFileHandle.synchronizeFile()
+        }
         objc_sync_exit(writeFileHandle)
     }
     
     func save() {
         objc_sync_enter(writeFileHandle)
-        writeFileHandle.synchronizeFile()
+        if #available(iOS 13.0, *) {
+            try? writeFileHandle.synchronize()
+        } else {
+            writeFileHandle.synchronizeFile()
+        }
         configuration.save()
         objc_sync_exit(writeFileHandle)
     }
