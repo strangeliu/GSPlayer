@@ -85,13 +85,11 @@ extension VideoDownloaderHandler: VideoDownloaderSessionDelegateHandlerDelegate 
     }
     
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
-        guard
-            let mimeType = response.mimeType,
-            mimeType.hasPrefix("video/")
-            else { completionHandler(.cancel); return }
-        
+        guard let mimeType = response.mimeType, mimeType.hasPrefix("video/") else {
+            completionHandler(.cancel);
+            return
+        }
         delegate?.handler(self, didReceive: response)
-        
         completionHandler(.allow)
     }
     
@@ -151,8 +149,8 @@ private extension VideoDownloaderHandler {
         
         var urlRequest = URLRequest(
             url: url,
-            cachePolicy: .reloadIgnoringLocalAndRemoteCacheData,
-            timeoutInterval: 60
+            cachePolicy: .useProtocolCachePolicy,
+            timeoutInterval: 30
         )
         
         let start = action.range.location
